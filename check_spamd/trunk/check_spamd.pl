@@ -6,48 +6,53 @@ nagios. The variable that most folks will want to change is "$spamc" which
 is the location of the spamc program.
 Created: 11/29/2006
 Version: 1.4              
-Revised: 4/01/2007
+Revised: 4/02/2007
 Revised by: Erinn Looney-Triggs
 Author: Erinn Looney-Triggs
 =cut
 
+use Getopt::Std;             #Grab short command line switches
+use POSIX qw( WIFEXITED );   #Fix system call's strange return values
 use strict;                  #Do it right
 use Switch;                  #Standard perl 5.8 module to use switch statement
-use POSIX qw( WIFEXITED );   #Fix system call's strange return values
-use Getopt::Std;           #Grab short command line switches
 
-my %options;                                            #Command line switches
+
+my %flags;                                              #Command line switches
 my $spamc   = "/usr/local/perl/bin/spamc";              #Location of spamc
-my $cmd     = "echo foo | $spamc -x 2>&1 > /dev/null";  #The command
-my $timeout = "10";                                     #Timeout of 10 seconds
+$flags{t} = "10";                                       #Default of 10 seconds
 $main::VERSION  = "1.4";                                #Version number
 $Getopt::Std::STANDARD_HELP_VERSION = 1;                #Die on help
+my $spamc_command = "echo foo | $spamc -x 2>&1 > /dev/null";  #The command
 
-#Allow for --help and --version to be used from command line
-getopts( '', \%options );
+
+#-t flag to set timeout value, defaults to 10 seconds
+getopts( 't:', \%flags );
 
 #Make sure spamc exists and if not give back a nagios warning
 if ( !-e $spamc ) {
-    print "The $spamc program does not exist.\n";
+    print "$spamc does not exist.\n";
     exit 2;
 }
 
 #Timer operation. Times out after 10 seconds.
 eval {
 
+    #Set the alarm and set the timeout
     local $SIG{ALRM} = sub { die "alarm\n" };
-    alarm $timeout;
+    alarm $flags{t};
 
     #Run the command
-    WIFEXITED( system("$cmd") ) or die "Couldn't run $cmd\n";
-
+    WIFEXITED( system("$spamc_command") ) 
+        or die "Could not run $spamc_command\n";
+    
     alarm 0;
 };
+
 
 #Test return value and exit if eval caught the alarm
 if ($@) {
     if ( $@ eq "alarm\n" ) {
-        print "Operation timed out after $timeout seconds.\n";
+        print "Operation timed out after $flags{t} seconds.\n";
         exit 2;
     }
     else {
@@ -102,3 +107,77 @@ EOF
 
 }
 __END__
+
+=head1 NAME
+
+check_spamd - Checks the status of SpamAssassin's spamd daemon via spamc.
+
+=head1 VERSION
+
+This documentation refers to check_spamd version 1.4
+
+=head1 USAGE
+
+check_spamd.pl
+
+=head1 REQUIRED ARGUMENTS
+
+None
+
+=head1 OPTIONS
+ 
+-t <timeout>     Sets timeout for the plugin, defaults to 10 seconds. Timeout
+                 must be set in whole seconds, fractions will be rounded. 
+
+=head1 DESCRIPTION
+ 
+This is a Nagios plugin that runs spamc to check the status of the spamd
+daemon. It then parses the resultant exit codes and NRPE grabs them. Only
+works for checks of spamd on the localhost at this point.
+
+=head1 DIAGNOSTICS
+
+=head2 spamc does not exist:
+
+The spamc program does not exist where the plugin is looking for it. By 
+default check_spamd looks for spamc in /usr/local/perl/bin/spamc. This may 
+not be the location of spamc on your system. Change the variable $spamc to 
+fix this issue.
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+spamc should be available on the checking system.
+spamd should be running on the system.
+ 
+=head1 DEPENDENCIES
+ 
+    check_spamd depends on the following modules:
+    Switch          Standard Perl 5.8 module
+    POSIX           Standard Perl 5.8 module
+    Getopt::Std     Standard Perl 5.8 module       
+    
+=head1 INCOMPATIBILITIES
+
+None known yet.
+
+=head1 BUGS AND LIMITATIONS
+
+Bugs, never heard of 'em ;).
+If you encounter any bugs let me know. (erinn.looneytriggs@gmail.com)
+
+=head1 AUTHOR
+
+Erinn Looney-Triggs (erinn.looneytriggs@gmail.com)
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2007 Erinn Looney-Triggs (erinn.looneytriggs@gmail.com). 
+All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License. 
+See L<http://www.fsf.org/licensing/licenses/gpl.html>.
+ 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
