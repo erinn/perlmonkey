@@ -5,8 +5,8 @@ Program to check to make sure spamd is running and report back to nrpe for
 nagios. The variable that most folks will want to change is "$spamc" which
 is the location of the spamc program.
 Created: 11/29/2006
-Version: 1.3              
-Revised: 3/31/2007
+Version: 1.4              
+Revised: 4/01/2007
 Revised by: Erinn Looney-Triggs
 Author: Erinn Looney-Triggs
 =cut
@@ -20,6 +20,7 @@ my %options;                                            #Command line switches
 my $spamc   = "/usr/local/perl/bin/spamc";              #Location of spamc
 my $cmd     = "echo foo | $spamc -x 2>&1 > /dev/null";  #The command
 my $timeout = "10";                                     #Timeout of 10 seconds
+$main::VERSION  = "1.4";                                #Version number
 $Getopt::Std::STANDARD_HELP_VERSION = 1;                #Die on help
 
 #Allow for --help and --version to be used from command line
@@ -84,7 +85,7 @@ else {
 #Version message information displayed in both --version and --help
 sub main::VERSION_MESSAGE {
     print <<"EOF";
-This is version $main::VERSION of pwldp.
+This is version $main::VERSION of check_spamd.
 
 Copyright (c) 2007 Erinn Looney-Triggs (erinn.looneytriggs\@gmail.com). 
 All rights reserved.
