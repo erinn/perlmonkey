@@ -16,17 +16,15 @@ use POSIX qw( WIFEXITED );   #Fix system call's strange return values
 use strict;                  #Do it right
 use Switch;                  #Standard perl 5.8 module to use switch statement
 
+my %flags;                   #Command line switches
+my $spamc = "/usr/local/perl/bin/spamc";    #Location of spamc
+$main::VERSION                      = "1.4";    #Version number
+$Getopt::Std::STANDARD_HELP_VERSION = 1;        #Die on help
+my $spamc_command = "echo foo | $spamc -x 2>&1 > /dev/null";    #The command
 
-my %flags;                                              #Command line switches
-my $spamc   = "/usr/local/perl/bin/spamc";              #Location of spamc
-$flags{t} = "10";                                       #Default of 10 seconds
-$main::VERSION  = "1.4";                                #Version number
-$Getopt::Std::STANDARD_HELP_VERSION = 1;                #Die on help
-my $spamc_command = "echo foo | $spamc -x 2>&1 > /dev/null";  #The command
-
-
-#-t flag to set timeout value, defaults to 10 seconds
+#-t flag to set timeout value, unless defined defaults to 10 seconds
 getopts( 't:', \%flags );
+$flags{t} = "10" unless ( $flags{t} );
 
 #Make sure spamc exists and if not give back a nagios warning
 if ( !-e $spamc ) {
@@ -34,7 +32,7 @@ if ( !-e $spamc ) {
     exit 2;
 }
 
-#Timer operation. Times out after 10 seconds.
+#Timer operation. Times out after $flags{t} seconds.
 eval {
 
     #Set the alarm and set the timeout
@@ -42,12 +40,11 @@ eval {
     alarm $flags{t};
 
     #Run the command
-    WIFEXITED( system("$spamc_command") ) 
+    WIFEXITED( system("$spamc_command") )
         or die "Could not run $spamc_command\n";
-    
+
     alarm 0;
 };
-
 
 #Test return value and exit if eval caught the alarm
 if ($@) {
@@ -56,7 +53,7 @@ if ($@) {
         exit 2;
     }
     else {
-        print "An unknown error has occured.\n";
+        print "An unknown error has occured: $@ \n";
         exit 3;
     }
 }
