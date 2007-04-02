@@ -121,7 +121,6 @@ None
 
 =head1 OPTIONS
  
-    -h          for help
     --help      for help
     --version   for version information
 
