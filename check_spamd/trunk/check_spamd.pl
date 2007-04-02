@@ -14,10 +14,16 @@ Author: Erinn Looney-Triggs
 use strict;                  #Do it right
 use Switch;                  #Standard perl 5.8 module to use switch statement
 use POSIX qw( WIFEXITED );   #Fix system call's strange return values
+use Getopt::Std;           #Grab short command line switches
 
-my $spamc = "/usr/local/perl/bin/spamc";                #Location of spamc
-my $cmd   = "echo foo | $spamc -x 2>&1 > /dev/null";    #The command
-my $timeout = "10";    #Nagios plugins call for a max timeout of 10 seconds
+my %options;                                            #Command line switches
+my $spamc   = "/usr/local/perl/bin/spamc";              #Location of spamc
+my $cmd     = "echo foo | $spamc -x 2>&1 > /dev/null";  #The command
+my $timeout = "10";                                     #Timeout of 10 seconds
+$Getopt::Std::STANDARD_HELP_VERSION = 1;                #Die on help
+
+#Allow for --help and --version to be used from command line
+getopts( '', \%options );
 
 #Make sure spamc exists and if not give back a nagios warning
 if ( !-e $spamc ) {
@@ -74,3 +80,24 @@ else {
         else    { print "An unknown error has occured in $spamc\n"; exit 3; }
     }
 }
+
+#Version message information displayed in both --version and --help
+sub main::VERSION_MESSAGE {
+    print <<"EOF";
+This is version $main::VERSION of pwldp.
+
+Copyright (c) 2007 Erinn Looney-Triggs (erinn.looneytriggs\@gmail.com). 
+All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License. 
+See http://www.fsf.org/licensing/licenses/gpl.html
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+
+EOF
+
+}
+__END__
