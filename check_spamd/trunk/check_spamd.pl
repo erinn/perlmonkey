@@ -1,5 +1,4 @@
 #!/usr/local/perl/bin/perl -w
-
 =for Information:
 Program to check to make sure spamd is running and report back to nrpe for 
 nagios. The variable that most folks will want to change is "$spamc" which
@@ -19,8 +18,9 @@ use Switch;                  #Standard perl 5.8 module to use switch statement
 my %flags;                   #Command line switches
 my $spamc = "/usr/local/perl/bin/spamc";    #Location of spamc
 $main::VERSION                      = "1.4";    #Version number
-$Getopt::Std::STANDARD_HELP_VERSION = 1;        #Die on help
+$Getopt::Std::STANDARD_HELP_VERSION = "1";        #Die on help
 my $spamc_command = "echo foo | $spamc -x 2>&1 > /dev/null";    #The command
+my $return_code;
 
 #-t flag to set timeout value, unless defined defaults to 10 seconds
 getopts( 't:', \%flags );
@@ -60,7 +60,7 @@ if ($@) {
 else {
 
     #Divide by 256 or bitshift right by 8 to get the original error code
-    my $return_code = $? >> 8;
+    $return_code = $? >> 8;
 
     #Parse the errors and give Nagios parsible error codes and messages
     switch ($return_code) {
