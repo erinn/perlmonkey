@@ -1,11 +1,12 @@
-#!/usr/local/perl/bin/perl -w
+#!/usr/local/perl/bin/perl
+
 =for Information:
 Program to check to make sure spamd is running and report back to nrpe for 
 nagios. The variable that most folks will want to change is "$spamc" which
 is the location of the spamc program.
 Created: 11/29/2006
-Version: 1.5              
-Revised: 4/02/2007
+Version: 1.5.0              
+Revised: 4/15/2007
 Revised by: Erinn Looney-Triggs
 Author: Erinn Looney-Triggs
 =cut
@@ -14,22 +15,22 @@ use Getopt::Long;            #Grab command line switches
 use POSIX qw( WIFEXITED );   #Fix system call's strange return values
 use strict;                  #Do it right
 use Switch;                  #Standard perl 5.8 module to use switch statement
+use warnings;
+use English qw( -no_match_vars );
 
-my %flags;                  #Command line switches hash
-$flags{timeout} = 10;       #Default timeout of 10 seconds
-my $return_code;            #Return code holder
-my $spamc = "/usr/local/perl/bin/spamc";        #Location of spamc
-my $spamc_command = "echo foo | $spamc -x 2>&1 > /dev/null";    #The command
-my $version = "1.5";        #Version number
+my %flags;                   #Command line switches hash
+$flags{timeout} = 10;        #Default timeout of 10 seconds
+my $return_code;             #Return code holder
+my $spamc = '/usr/local/perl/bin/spamc';    #Location of spamc
+my $spamc_command = "echo foo | $spamc -x 2>&1 > /dev/null";   #The command
+my $VERSION       = '1.5.0';                                   #Version number
 
+Getopt::Long::Configure( 'bundling', 'gnu_compat', );
 
-
-&Getopt::Long::Configure("bundling", "gnu_compat",);
-
-GetOptions (\%flags, 'timeout=i',
-            'version' => sub { VersionMessage() },
-            );
-
+GetOptions( \%flags, 'timeout=i',
+            'version|V' => sub { VersionMessage() },
+            'help|h'
+);
 
 #Make sure spamc exists and if not give back a nagios warning
 if ( !-e $spamc ) {
@@ -45,16 +46,16 @@ eval {
     alarm $flags{timeout};
 
     #Run the command
-    WIFEXITED(system $spamc_command)
+    WIFEXITED( system $spamc_command)
         or die "Could not run $spamc_command\n";
-    $return_code = $?;
-        
+    $return_code = $CHILD_ERROR;
+
     alarm 0;
 };
 
 #Test return value and exit if eval caught the alarm
-if ($@) {
-    if ( $@ eq "alarm\n" ) {
+if ($EVAL_ERROR) {
+    if ( $EVAL_ERROR eq "alarm\n" ) {
         print "Operation timed out after $flags{timeout} seconds.\n";
         exit 2;
     }
@@ -64,11 +65,10 @@ if ($@) {
     }
 }
 
-
 #Divide by 256 or bitshift right by 8 to get the original error code
 $return_code >>= 8;
 
-    #Parse the errors and give Nagios parsible error codes and messages
+#Parse the errors and give Nagios parsible error codes and messages
 switch ($return_code) {
     case 0  { print "OK\n";                                     exit 0; }
     case 64 { print "Command line usage error\n";               exit 1; }
@@ -89,11 +89,10 @@ switch ($return_code) {
     else    { print "An unknown error has occured in $spamc\n"; exit 3; }
 }
 
-
 #Version message information displayed in both --version and --help
 sub main::VersionMessage {
     print <<"EOF";
-This is version $version of check_spamd.
+This is version $VERSION of check_spamd.
 
 Copyright (c) 2007 Erinn Looney-Triggs (erinn.looneytriggs\@gmail.com). 
 All rights reserved.
@@ -108,7 +107,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 EOF
 
-exit 1;
+    exit 1;
 }
 __END__
 
