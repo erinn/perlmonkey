@@ -60,7 +60,7 @@ if ($EVAL_ERROR) {
         exit 2;
     }
     else {
-        print "An unknown error has occured: $@ \n";
+        print "An unknown error has occured: $EVAL_ERROR \n";
         exit 3;
     }
 }
