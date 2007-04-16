@@ -11,7 +11,7 @@ Revised: 04/01/2007
 Revised by: Erinn Looney-Triggs
 Author: Erinn Looney-Triggs
 =cut
- 
+
 use strict;                #Do it right
 use Net::LDAP;             #CPAN module to bind to an LDAP server
 use Tie::File;             #Built in module to tie to files as arrays
