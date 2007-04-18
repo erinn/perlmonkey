@@ -1,25 +1,25 @@
 #!/usr/local/perl/bin/perl
 
-=for Information:
-Program to check to make sure spamd is running and report back to nrpe for 
-nagios. The variable that most folks will want to change is "$spamc" which
-is the location of the spamc program.
-Created: 11/29/2006
-Version: 1.5.0              
-Revised: 4/15/2007
-Revised by: Erinn Looney-Triggs
-Author: Erinn Looney-Triggs
-=cut
 
+#Program to check to make sure spamd is running and report back to nrpe for 
+#nagios. The variable that most folks will want to change is "$spamc" which
+#is the location of the spamc program.
+#Created: 11/29/2006
+#Version: 1.5.0              
+#Revised: 4/15/2007
+#Revised by: Erinn Looney-Triggs
+#Author: Erinn Looney-Triggs
+
+use English qw( -no_match_vars );
 use Getopt::Long;            #Grab command line switches
+use Pod::Usage;
 use POSIX qw( WIFEXITED );   #Fix system call's strange return values
 use strict;                  #Do it right
 use Switch;                  #Standard perl 5.8 module to use switch statement
 use warnings;
-use English qw( -no_match_vars );
 
-my %flags;                   #Command line switches hash
-$flags{timeout} = 10;        #Default timeout of 10 seconds
+my $help    = 0;
+my $timeout = 10;            #Default timeout of 10 seconds
 my $return_code;             #Return code holder
 my $spamc = '/usr/local/perl/bin/spamc';    #Location of spamc
 my $spamc_command = "echo foo | $spamc -x 2>&1 > /dev/null";   #The command
@@ -27,10 +27,13 @@ my $VERSION       = '1.5.0';                                   #Version number
 
 Getopt::Long::Configure( 'bundling', 'gnu_compat', );
 
-GetOptions( \%flags, 'timeout=i',
-            'version|V' => sub { VersionMessage() },
-            'help|h'
+GetOptions( 'spamc|s'       => $spamc,
+            'timeout|t=i'   => \$timeout,
+            'version|V'     => sub { VersionMessage() },
+            'help|h'        => \$help,
 );
+
+pod2usage(1) if ($help);
 
 #Make sure spamc exists and if not give back a nagios warning
 if ( !-e $spamc ) {
@@ -43,7 +46,7 @@ eval {
 
     #Set the alarm and set the timeout
     local $SIG{ALRM} = sub { die "alarm\n" };
-    alarm $flags{timeout};
+    alarm $timeout;
 
     #Run the command
     WIFEXITED( system $spamc_command)
@@ -56,7 +59,7 @@ eval {
 #Test return value and exit if eval caught the alarm
 if ($EVAL_ERROR) {
     if ( $EVAL_ERROR eq "alarm\n" ) {
-        print "Operation timed out after $flags{timeout} seconds.\n";
+        print "Operation timed out after $timeout seconds.\n";
         exit 2;
     }
     else {
@@ -117,7 +120,7 @@ check_spamd - Checks the status of SpamAssassin's spamd daemon via spamc.
 
 =head1 VERSION
 
-This documentation refers to check_spamd version 1.5
+This documentation refers to check_spamd version 1.5.0
 
 =head1 USAGE
 
@@ -128,9 +131,9 @@ check_spamd.pl
 None
 
 =head1 OPTIONS
- 
--t <timeout>     Sets timeout for the plugin, defaults to 10 seconds. Timeout
-                 must be set in whole seconds, fractions will be rounded. 
+
+--spamc   (-s)     Set the location of the spamc executable. 
+--timeout (-t)     Sets the timeout, defaults to 10 seconds.
 
 =head1 DESCRIPTION
  
