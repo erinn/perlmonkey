@@ -1,6 +1,6 @@
 #!/usr/local/perl/bin/perl
 
-
+#####################################################
 #Program to check to make sure spamd is running and report back to nrpe for 
 #nagios. The variable that most folks will want to change is "$spamc" which
 #is the location of the spamc program.
@@ -9,6 +9,7 @@
 #Revised: 4/15/2007
 #Revised by: Erinn Looney-Triggs
 #Author: Erinn Looney-Triggs
+#####################################################
 
 use English qw( -no_match_vars );
 use Getopt::Long;            #Grab command line switches
