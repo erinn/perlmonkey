@@ -19,7 +19,6 @@ use strict;                  #Do it right
 use Switch;                  #Standard perl 5.8 module to use switch statement
 use warnings;
 
-my $help    = 0;
 my $timeout = 10;            #Default timeout of 10 seconds
 my $return_code;             #Return code holder
 my $spamc = '/usr/local/perl/bin/spamc';    #Location of spamc
@@ -28,13 +27,11 @@ my $VERSION       = '1.5.0';                                   #Version number
 
 Getopt::Long::Configure( 'bundling', 'gnu_compat', );
 
-GetOptions( 'spamc|s'       => $spamc,
+GetOptions( 'spamc|s'       => \$spamc,
             'timeout|t=i'   => \$timeout,
             'version|V'     => sub { VersionMessage() },
-            'help|h'        => \$help,
+            'help|h'        => sub { pod2usage(1) },
 );
-
-pod2usage(1) if ($help);
 
 #Make sure spamc exists and if not give back a nagios warning
 if ( !-e $spamc ) {
