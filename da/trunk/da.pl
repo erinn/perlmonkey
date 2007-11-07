@@ -4,8 +4,8 @@
 # Program to perform a lookup in LDAP based on either a login name 
 # or a common name 
 #
-#Created: 2007-11-02
-#Version: 1.0.0            
+#Created: 2007-11-07
+#Version: 1.0.1            
 #Revised: 
 #Revised by:
 #Author: Erinn Looney-Triggs
@@ -23,7 +23,7 @@ my $directory = 'directory.colorado.edu';  #Default LDAP directory is colorado
 my @common_name;        #Holds the common name specified
 my @login;              #Array to hold login names specified on command line
 my $timeout = '30';     #Set the timeout for the ldap call (default 30 seconds)
-my $VERSION = '1.0.0';  #Version number of program
+my $VERSION = '1.0.1';  #Version number of program
 
 
 Getopt::Long::Configure( 'gnu_compat', );
@@ -36,6 +36,12 @@ GetOptions( 'directory|d=s' => \$directory,
             'help|h'        => sub { pod2usage(1) },
 );
 
+#It seems like there should be a better way to do this. If no getopts are 
+#specified, pull "whatever" from the command line and search for it as a 
+#common name.
+unless (@login || @common_name){
+     @common_name = @ARGV;
+}
 
 if (@common_name){
     ldap_search('cn', \@common_name);
@@ -151,7 +157,7 @@ da - Searches the specified LDAP directory by common name or by user name.
 
 =head1 VERSION
 
-This documentation refers to da version 1.0.0
+This documentation refers to da version 1.0.1
 
 =head1 USAGE
 
@@ -159,7 +165,7 @@ da [options] PATTERN
 
 =head1 REQUIRED ARGUMENTS
 
-Must supply at least one common name to search for
+Must supply at least one common name to search for.
 
 =head1 OPTIONS
 
@@ -169,7 +175,7 @@ da [options] PATTERN
 
 --help      (-h)   Will list the command line switches that can be used
 
---login     (-l)   Must be followed by one or more login name(s) to search for
+--login     (-l)   Must be followed by one or more login name(s)
 
 --name      (-n)   Must be followed by on or more common name(s)
 
