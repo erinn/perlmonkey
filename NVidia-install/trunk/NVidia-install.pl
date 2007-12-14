@@ -11,19 +11,19 @@
 #Author: 
 #####################################################
 
-use Carp;                    #Croak instead of die
+use Carp;                       #Croak instead of die
 use English qw( -no_match_vars );
-use Getopt::Long;            #Grab command line switches
-use Pod::Usage;
-use POSIX qw( WIFEXITED );   #Fix system call's strange return values
-use strict;                  #Do it right
+use Getopt::Long;               #Grab command line switches
+use Pod::Usage;                 
+use POSIX qw( WIFEXITED );      #Fix system call's strange return values
+use strict;                     #Do it right
 use Sys::Hostname;
 use Tie::File;
 use warnings;
 
 my $NVidia_module       = "nvidia-current";
-my $architecture= architecture_check();  #Obtain Arch, either i386 or x86_64
-my $host = hostname;                    #Obtain the hostname
+my $architecture        = architecture_check();  #Obtain architecture
+my $host                = hostname;              #Obtain the hostname
 my $NVidia_directory    = "/usr/local/$NVidia_module" . "_" . "$architecture";
 my $NVidia_installer    = "$NVidia_directory/nvidia-installer";
 my $NVidia_source       = "$NVidia_directory/usr/src/nv/";
@@ -36,11 +36,13 @@ GetOptions(
             'help|h'        => sub { pod2usage(1) },
 );
 
-rpm_check( "dkms" );
-sanity_checks();
-$NVidia_version = NVidia_version();
-dkms_check();
+#The heart of the matter
+rpm_check( "dkms" );    #Check for the existance of the rpm
+sanity_checks();        #Perform a number of sanity checks before starting
+$NVidia_version = NVidia_version(); #Obtain the version of the NVidia module
+dkms_check();           #Check dkms and perform the install
 
+#Check for the architecture type of the system and return the value
 sub architecture_check{
     #Capture the architecture output, similair to using uname -a
     my $arch = (POSIX::uname())[4];
@@ -55,19 +57,19 @@ sub architecture_check{
     }
 }
 
+#Checks the status of dkms
 sub dkms_check{
     my $dkms_output;
     
     #Capture the output of dkms status to see if there are nvidia modules 
     #installed.
-    eval {
-        $dkms_output = `dkms status -m $NVidia_module`; 
-    };
-    if ($?) {
-        croak "Unable to run: dkms status, $OS_ERROR $CHILD_ERROR, aborting.\n";
+
+    $dkms_output = `dkms status -m $NVidia_module`; 
+    if ($CHILD_ERROR) {
+        croak "Unable to run: dkms status, $CHILD_ERROR, aborting.\n";
     }
     
-    #If dkms_version exists then find out the version number and compare to 
+    #If dkms_version exists then find out the version number and compare it to 
     #NVidia's version.
     if ( $dkms_output =~ /$NVidia_module,\s([\d]+\.[\d]+\.[\d]+)/ ){
         my $dkms_version = $1;
@@ -112,8 +114,7 @@ sub dkms_add{
     #Add the module to dkms, note this will not build the module that will 
     #happen on reboot as specified in the dkms.conf file
     WIFEXITED ( system "dkms add -m $NVidia_module -v $version --quiet" )
-            or croak "Unable to run: 
-                dkms add, $OS_ERROR $CHILD_ERROR, aborting.\n";
+            or croak "Unable to run: dkms add, $CHILD_ERROR, aborting.\n";
     
     return 0;   #Return nothing and do it meaningfully ;)
 }
@@ -126,8 +127,7 @@ sub dkms_remove{
     #programs as specified in the dkms.conf file
     WIFEXITED ( 
         system "dkms remove -m $NVidia_module -v $dkms_version --all --quiet") 
-            or croak "Unable to run: 
-                dkms remove, $OS_ERROR $CHILD_ERROR, aborting.\n";
+            or croak "Unable to run: dkms remove, $CHILD_ERROR, aborting.\n";
     
     return 0;   #Return nothing and do it meaningfully ;)
 }
@@ -141,7 +141,9 @@ sub NVidia_version{
         or croak "Can't tie to $version_file, $OS_ERROR \n";
     
     for my $line (@file){
-        $version = $1 if $line =~ /\s([\d]+\.[\d]+\.[\d]+)\s/;
+        if ($line =~ /\s([\d]+\.[\d]+\.[\d]+)\s/){
+            $version = $1;
+        }
     }
      
     untie @file;        #Be polite and untie the file
@@ -155,8 +157,8 @@ sub rpm_check{
     
     #Make the query to the rpm database to find out if dkms is installed
     $result = `rpm -q $package`;
-    if ($?){
-        croak "Unable to run: rpm -q $package, aborting.\n";
+    if ($CHILD_ERROR){
+        croak "Unable to run: rpm -q $package, $CHILD_ERROR aborting.\n";
     }
     
     if ($result){
@@ -245,8 +247,8 @@ None
 
 =head1 OPTIONS
 
---version       (-V) Display version information
---help          (-h) Display help information
+    --version       (-V) Display version information
+    --help          (-h) Display help information
 
 =head1 DESCRIPTION
  
