@@ -53,7 +53,7 @@ sub architecture_check{
     }
     #Else return x86_64 or whatever else it is
     else{
-        return $arch
+        return $arch;
     }
 }
 
@@ -92,8 +92,10 @@ sub dkms_check{
             unlink "/usr/src/$NVidia_module-$dkms_version";
             
             #This create the symlink to the new version and adds it to dkms
-            symlink "$NVidia_source", 
-                "/usr/src/$NVidia_module-$NVidia_version";
+            symlink "$NVidia_source", "/usr/src/$NVidia_module-$NVidia_version" 
+                or croak
+                "Failed to symlink: /usr/src/$NVidia_module-$NVidia_version, aborting! \n";
+            
             dkms_add($NVidia_version);
         }        
     }
