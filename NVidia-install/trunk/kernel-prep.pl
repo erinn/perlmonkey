@@ -46,7 +46,7 @@ sub kernel_prep {
         or croak "Failed to symlink: $kernel_source/arch/i686, $OS_ERROR aborting! \n";
     }    
        
-    return 0;    #Return nothing, and do it with meaning ;)
+    return;
     
 }
 #Check to make sure the system is in the state we need
@@ -64,6 +64,7 @@ sub sanity_checks {
         die "Unable to write to $kernel_source/arch/, aborting!\n";
     }
     
+    return;
 }
 sub main::VersionMessage {
     print <<"EOF";
