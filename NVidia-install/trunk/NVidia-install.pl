@@ -21,6 +21,7 @@ use Sys::Hostname;
 use Tie::File;
 use warnings;
 
+$ENV{PATH}              = "/bin:/sbin:/usr/bin:/usr/sbin:"; #Safer path
 my $NVidia_module       = "nvidia-current";
 my $architecture        = architecture_check();  #Obtain architecture
 my $host                = hostname;              #Obtain the hostname
@@ -42,6 +43,7 @@ sanity_checks();        #Perform a number of sanity checks before starting
 $NVidia_version = NVidia_version(); #Obtain the version of the NVidia module
 dkms_check();           #Check dkms and perform the install
 
+
 #Check for the architecture type of the system and return the value
 sub architecture_check{
     #Capture the architecture output, similair to using uname -a
@@ -57,6 +59,18 @@ sub architecture_check{
     }
 }
 
+sub dkms_add{
+    
+    my $version = shift;    #Get the version number to be added
+    
+    #Add the module to dkms, note this will not build the module, that will 
+    #happen on reboot as specified in the dkms.conf file
+    WIFEXITED ( system "dkms add -m $NVidia_module -v $version --quiet" )
+            or croak "Unable to run: dkms add, $CHILD_ERROR, aborting.\n";
+    
+    return 0;   #Return nothing and do it meaningfully ;)
+}
+
 #Checks the status of dkms
 sub dkms_check{
     my $dkms_output;
@@ -64,7 +78,7 @@ sub dkms_check{
     #Capture the output of dkms status to see if there are nvidia modules 
     #installed.
 
-    $dkms_output = `dkms status -m $NVidia_module`; 
+    chomp ($dkms_output = `dkms status -m $NVidia_module`); 
     if ($CHILD_ERROR) {
         croak "Unable to run: dkms status, $CHILD_ERROR, aborting!\n";
     }
@@ -115,20 +129,9 @@ sub dkms_check{
         dkms_add($NVidia_version);
     }
     
-    return 0;
+    return;
 }
 
-sub dkms_add{
-    
-    my $version = shift;    #Get the version number to be added
-    
-    #Add the module to dkms, note this will not build the module, that will 
-    #happen on reboot as specified in the dkms.conf file
-    WIFEXITED ( system "dkms add -m $NVidia_module -v $version --quiet" )
-            or croak "Unable to run: dkms add, $CHILD_ERROR, aborting.\n";
-    
-    return 0;   #Return nothing and do it meaningfully ;)
-}
 
 sub dkms_remove{
     my $dkms_version = shift;   #Get the version number to be removed
@@ -140,7 +143,7 @@ sub dkms_remove{
         system "dkms remove -m $NVidia_module -v $dkms_version --all --quiet") 
             or croak "Unable to run: dkms remove, $CHILD_ERROR, aborting.\n";
     
-    return 0;   #Return nothing and do it meaningfully ;)
+    return;   #Return nothing and do it meaningfully ;)
 }
 
 sub NVidia_version{
@@ -176,19 +179,24 @@ sub rpm_check{
     my $result;             #Holds output of rpm command
     
     #Make the query to the rpm database to find out if dkms is installed
-    $result = `rpm -q $package`;
+    chomp ($result = `rpm -q $package`);
+    
+    #rpm return 1 when the package is not found in the database so:
     if ($CHILD_ERROR){
-        croak "Unable to run: rpm -q $package, $CHILD_ERROR aborting.\n";
+        if ($result eq "package dkms is not installed"){
+            die "The $package rpm is not installed on $host, aborting!\n";
+        }
+        else {
+            croak "An unknown error has occured while attempting to run: "
+            . "rpm -q $package, aborting";
+        } 
     }
-    
-    if ($result){
-        return;    #Return nothing and do it meaningfully ;)
-    }
-    
-    #If the package does not exist croak.
     else {
-        croak "The $package rpm is not installed on $host, aborting. \n";
+        return;
     }
+    
+    return; #Should never be reached but in place
+    
 }
 
 sub sanity_checks{
@@ -212,14 +220,13 @@ sub sanity_checks{
     }
     #The nvidia-installer script has to be executable, if not croak.
     if (!-x "$NVidia_installer"){
-        die "$NVidia_installer is not executableon $host, aborting. \n";
+        die "$NVidia_installer is not executable on $host, aborting. \n";
     }
     #The NVidia source directory has to exist, if not croak.
     if (!-d "$NVidia_source"){
         die "$NVidia_source does not exist on $host, aborting.\n";
     }
-    #The dkms.conf file has to exist in the NVidia source directory, if not 
-    #croak
+    #The dkms.conf file has to exist if not croak
     if (!-e "$NVidia_source/dkms.conf"){
         die "dkms.conf does not exist in $NVidia_source on $host, " 
         . "aborting. \n";
@@ -312,7 +319,7 @@ Erinn Looney-Triggs (erinn.looneytriggs@gmail.com)
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2007 Erinn Looney-Triggs (erinn.looneytriggs@gmail.com). 
+Copyright (c) 2007-2008 Erinn Looney-Triggs (erinn.looneytriggs@gmail.com). 
 All rights reserved.
 
 This module is free software; you can redistribute it and/or
