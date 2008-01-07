@@ -4,7 +4,7 @@
 #Script to check if the latest version of the nvidia module is installed on
 #the system, if not add it to dkms.
 #Created: 12/7/2007
-#Version: 1.1.0              
+#Version: 1.1.1              
 #If you change the version number change it in variables as well as in POD
 #Revised: 12/28/2007
 #Revised by: Erinn Looney-Triggs
@@ -90,7 +90,7 @@ sub dkms_check{
                         (?:[\.|-])              #Non-capture either . or -
                         [\d]+                   #Digit(s)
                         (?:[\.|-][\d]+)?        #Optional . or - and digit(s)
-                        ),                      #end capture and comma
+                        )[,|:]                  #end capture and comma or :
                         /x ){
         my $dkms_version = $1;
         
