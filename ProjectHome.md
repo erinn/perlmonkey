@@ -1,0 +1,1 @@
+This is a collection of Perl scripts that I use for systems administration. Some of them are rougher than others but it is my hope that some of these can be useful to some individuals.
